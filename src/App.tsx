@@ -6,6 +6,7 @@ import { AnimalForm } from './components/AnimalForm'
 import { ExamineImport } from './components/ExamineImport'
 import { AnimalTable } from './components/AnimalTable'
 import { BreedingPanel } from './components/BreedingPanel'
+import { HerdChart } from './components/HerdChart'
 import { PregnantTable } from './components/PregnantTable'
 import { usePersistedHerd } from './hooks/usePersistedHerd'
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext'
@@ -84,7 +85,10 @@ function HusbandryTool() {
             onSave={handleSave}
             onCancelEdit={() => {}}
           />
-          <BreedingPanel animals={animals} onBreed={handleBreed} />
+          <div className="space-y-6">
+            <BreedingPanel animals={animals} onBreed={handleBreed} />
+            <HerdChart animals={animals} />
+          </div>
         </div>
 
         <div className="mt-6">

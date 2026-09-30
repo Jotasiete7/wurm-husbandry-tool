@@ -113,7 +113,8 @@ export function ExamineImport({ onImport }: ExamineImportProps) {
                 <X size={18} />
               </button>
             </div>
-            <p className="mb-3 text-sm text-wurm-muted">{t('pasteExamineHint')}</p>
+            <p className="mb-2 text-sm text-wurm-muted">{t('pasteExamineHint')}</p>
+            <p className="mb-3 text-sm text-wurm-accentDim">{t('examinePending')}</p>
             <textarea
               id="examine-log"
               ref={textRef}

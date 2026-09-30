@@ -18,6 +18,8 @@ const CATEGORY_ORDER = [
   'Negative',
 ]
 
+const UNCOUNTED_TRAITS = new Set(['Bred in captivity.'])
+
 export type TraitSummary = {
   abbreviation: string
   names: string[]
@@ -31,6 +33,7 @@ export function formatTraits(traitNames: string[] | undefined): TraitSummary {
   const counts: Record<string, number> = {}
 
   traitNames.forEach((name) => {
+    if (UNCOUNTED_TRAITS.has(name)) return
     const trait = ANIMAL_TRAITS.find((item) => item.trait === name)
     const categories = trait?.categories ?? ['Miscellaneous']
     categories.forEach((category) => {
