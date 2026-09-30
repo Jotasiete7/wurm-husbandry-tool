@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Network, Home, BookOpen, Pickaxe, LineChart, BookMarked, Hammer, Shield, Gavel, Gem, PawPrint } from 'lucide-react';
+import { Network, Home, BookOpen, Pickaxe, LineChart, BookMarked, Hammer, Shield, Gavel, Gem, PawPrint, Hourglass, Sparkles } from 'lucide-react';
 
 // Common types to avoid dependencies
 interface EcosystemTool {
@@ -29,6 +29,12 @@ const ECOSYSTEM_TOOLS: EcosystemTool[] = [
         icon: BookOpen,
     },
     {
+        id: 'affinity',
+        label: { en: 'Affinity & Moonshine', pt: 'Afinidades & Moonshine' },
+        href: 'https://italocf.github.io/wurm-affinity/',
+        icon: Sparkles,
+    },
+    {
         id: 'mining',
         label: { en: 'Mining', pt: 'Mineração' },
         href: 'https://wurm-mining-tool.pages.dev',
@@ -48,7 +54,7 @@ const ECOSYSTEM_TOOLS: EcosystemTool[] = [
     },
     {
         id: 'carpentry',
-        label: 'Carpentry',
+        label: { en: 'Carpentry', pt: 'Marcenaria' },
         href: 'https://wurm-carpentry-tool.pages.dev',
         icon: Hammer,
     },
@@ -57,6 +63,18 @@ const ECOSYSTEM_TOOLS: EcosystemTool[] = [
         label: { en: 'Husbandry', pt: 'Criação' },
         href: 'https://wurm-husbandry-tool.pages.dev',
         icon: PawPrint,
+    },
+    {
+        id: 'wall-decay',
+        label: { en: 'Wall Decay', pt: 'Decaimento' },
+        href: 'https://wurm-wall-decay-calculator.pages.dev',
+        icon: Hourglass,
+    },
+    {
+        id: 'relic-appraiser',
+        label: { en: 'Relic Appraiser', pt: 'Avaliador de Relíquias' },
+        href: 'https://wurm-relic-appraiser.pages.dev',
+        icon: Gem,
     },
     {
         id: 'auction',
