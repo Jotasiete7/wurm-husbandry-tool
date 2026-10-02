@@ -4,6 +4,7 @@ import { LanguageSwitch } from '@ecossistema-guilda/modules/LanguageSwitch'
 import { useRef, useState } from 'react'
 import { AnimalForm } from './components/AnimalForm'
 import { ExamineImport } from './components/ExamineImport'
+import { InspectImport } from './components/InspectImport'
 import { AnimalTable } from './components/AnimalTable'
 import { BreedingPanel } from './components/BreedingPanel'
 import { HerdChart } from './components/HerdChart'
@@ -72,12 +73,20 @@ function HusbandryTool() {
           <p className="mb-4 text-center text-sm text-emerald-400">{notice}</p>
         )}
 
-        <ExamineImport
-          onImport={(parsed) => {
-            const summary = importExamined(parsed)
-            flash(t('examineImported', summary))
-          }}
-        />
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <ExamineImport
+            onImport={(parsed) => {
+              const summary = importExamined(parsed)
+              flash(t('examineImported', summary))
+            }}
+          />
+          <InspectImport
+            onImport={(parsed) => {
+              const summary = importExamined(parsed)
+              flash(t('examineImported', summary))
+            }}
+          />
+        </div>
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <AnimalForm

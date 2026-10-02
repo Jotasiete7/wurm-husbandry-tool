@@ -62,8 +62,7 @@ export function ExamineImport({ onImport }: ExamineImportProps) {
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <button
+      <button
           type="button"
           className="inline-flex items-center gap-2 rounded-md bg-wurm-accent px-3 py-2 text-sm font-medium text-black hover:bg-wurm-accent/90"
           onClick={() => {
@@ -91,7 +90,6 @@ export function ExamineImport({ onImport }: ExamineImportProps) {
             event.target.value = ''
           }}
         />
-      </div>
 
       {open && (
         <div
