@@ -9,15 +9,17 @@ import { AnimalTable } from './components/AnimalTable'
 import { BreedingPanel } from './components/BreedingPanel'
 import { HerdChart } from './components/HerdChart'
 import { PregnantTable } from './components/PregnantTable'
+import { PenBoard } from './components/PenBoard'
 import { usePersistedHerd } from './hooks/usePersistedHerd'
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext'
 import type { AnimalDraft } from './types'
 
 function HusbandryTool() {
   const { language, setLanguage, t } = useLanguage()
-  const { animals, addAnimal, updateAnimal, deleteAnimal, setBreeding, clearPregnancy, importExamined } =
+  const { animals, pen, addAnimal, updateAnimal, deleteAnimal, setBreeding, clearPregnancy, importExamined, placeOnTile, removeFromTile, setPenSize } =
     usePersistedHerd()
   const [notice, setNotice] = useState<string | null>(null)
+  const [tab, setTab] = useState<'herd' | 'pen'>('herd')
   const noticeTimer = useRef<number | null>(null)
 
   const flash = (message: string, ms = 4000) => {
@@ -40,6 +42,14 @@ function HusbandryTool() {
     if (!window.confirm(t('deleteConfirm'))) return
     deleteAnimal(id)
     flash(t('deleted'))
+  }
+
+  const handleImport = (parsed: Parameters<typeof importExamined>[0], tileIndex?: number | null) => {
+    const summary = importExamined(parsed, tileIndex)
+    const message = summary.skipped
+      ? `${t('examineImported', summary)} ${t('penBirthSkipped', { count: summary.skipped })}`
+      : t('examineImported', summary)
+    flash(message)
   }
 
   const handleBreed = (femaleId: string, maleId: string, days: number, hours: number) => {
@@ -67,25 +77,43 @@ function HusbandryTool() {
         }
       />
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className={`mx-auto px-4 py-8 ${tab === 'pen' ? 'max-w-7xl' : 'max-w-6xl'}`}>
+        <div className="mb-6 flex justify-center gap-2">
+          {(['herd', 'pen'] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={tab === id}
+              className={`rounded-md px-4 py-2 text-sm ${
+                tab === id
+                  ? 'bg-wurm-accent font-medium text-black'
+                  : 'border border-wurm-border text-wurm-text hover:border-wurm-accent'
+              }`}
+              onClick={() => setTab(id)}
+            >
+              {id === 'herd' ? t('tabHerd') : t('tabPens')}
+            </button>
+          ))}
+        </div>
         <p className="mb-6 text-center text-wurm-muted">{t('subtitle')}</p>
         {notice && (
           <p className="mb-4 text-center text-sm text-emerald-400">{notice}</p>
         )}
 
+        {tab === 'pen' ? (
+          <PenBoard
+            animals={animals}
+            pen={pen}
+            onPlace={placeOnTile}
+            onRemove={removeFromTile}
+            onResize={setPenSize}
+            onImport={handleImport}
+          />
+        ) : (
+          <>
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <ExamineImport
-            onImport={(parsed) => {
-              const summary = importExamined(parsed)
-              flash(t('examineImported', summary))
-            }}
-          />
-          <InspectImport
-            onImport={(parsed) => {
-              const summary = importExamined(parsed)
-              flash(t('examineImported', summary))
-            }}
-          />
+          <ExamineImport onImport={(parsed) => handleImport(parsed)} />
+          <InspectImport onImport={(parsed) => handleImport(parsed)} />
         </div>
 
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -107,6 +135,8 @@ function HusbandryTool() {
         <div className="mt-6">
           <PregnantTable animals={animals} onClear={clearPregnancy} />
         </div>
+          </>
+        )}
 
         <footer className="mt-10 text-center text-xs text-wurm-muted">
           <p>{t('footer')}</p>

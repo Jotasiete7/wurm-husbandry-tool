@@ -1,4 +1,5 @@
 import type { Animal, AnimalDraft, Gender } from '../types'
+import { emptyPen, type PenLayout, TILE_CAPACITY, clampSpan } from '../logic/penLayout'
 
 export const STORAGE_KEY = 'wurm-husbandry-tool-state'
 const CURRENT_VERSION = 1
@@ -6,11 +7,13 @@ const CURRENT_VERSION = 1
 export type PersistedHerdState = {
   version: number
   animals: Animal[]
+  pen: PenLayout
 }
 
 export const defaultPersistedState = (): PersistedHerdState => ({
   version: CURRENT_VERSION,
   animals: [],
+  pen: emptyPen(),
 })
 
 export function createAnimalId(): string {
@@ -95,6 +98,28 @@ function sanitizeAnimal(value: unknown): Animal | null {
   }
 }
 
+function sanitizePen(value: unknown, animalIds: Set<string>): PenLayout {
+  if (!value || typeof value !== 'object') return emptyPen()
+  const raw = value as Partial<PenLayout>
+  const columns = clampSpan(typeof raw.columns === 'number' ? raw.columns : 6)
+  const rows = clampSpan(typeof raw.rows === 'number' ? raw.rows : 4)
+  const source = Array.isArray(raw.tiles) ? raw.tiles : []
+  const seen = new Set<string>()
+  const tiles: string[][] = []
+  for (let index = 0; index < columns * rows; index += 1) {
+    const cell = Array.isArray(source[index]) ? source[index] : []
+    const ids: string[] = []
+    for (const id of cell) {
+      if (typeof id !== 'string' || !animalIds.has(id) || seen.has(id)) continue
+      if (ids.length >= TILE_CAPACITY) break
+      seen.add(id)
+      ids.push(id)
+    }
+    tiles.push(ids)
+  }
+  return { columns, rows, tiles }
+}
+
 export function loadPersistedState(): PersistedHerdState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -105,7 +130,8 @@ export function loadPersistedState(): PersistedHerdState {
           .map(sanitizeAnimal)
           .filter((animal): animal is Animal => animal !== null)
       : []
-    return { version: CURRENT_VERSION, animals }
+    const animalIds = new Set(animals.map((animal) => animal.id))
+    return { version: CURRENT_VERSION, animals, pen: sanitizePen(parsed.pen, animalIds) }
   } catch {
     return defaultPersistedState()
   }

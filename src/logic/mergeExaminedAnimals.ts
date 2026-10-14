@@ -6,6 +6,7 @@ export type ImportSummary = {
   animals: Animal[]
   added: number
   updated: number
+  addedIds: string[]
 }
 
 function dueDate(days: number, hours: number, now: number): number {
@@ -47,6 +48,7 @@ export function mergeExaminedAnimals(
   const next = [...animals]
   let added = 0
   let updated = 0
+  const addedIds: string[] = []
 
   for (const item of parsed) {
     const index = next.findIndex((animal) => animal.importKey && animal.importKey === item.importKey)
@@ -54,8 +56,10 @@ export function mergeExaminedAnimals(
     const pregnancy = pregnancyFields(item, existing, next, now)
 
     if (!existing) {
+      const id = createAnimalId()
+      addedIds.push(id)
       next.unshift({
-        id: createAnimalId(),
+        id,
         name: item.name,
         type: item.type,
         gender: item.gender,
@@ -90,5 +94,5 @@ export function mergeExaminedAnimals(
     updated += 1
   }
 
-  return { animals: next, added, updated }
+  return { animals: next, added, updated, addedIds }
 }

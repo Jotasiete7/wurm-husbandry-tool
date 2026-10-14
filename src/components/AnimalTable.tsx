@@ -4,6 +4,7 @@ import { ANIMAL_CONDITIONS, ANIMAL_TYPES, optionLabel } from '../data/catalog'
 import { ageKey, genderKey } from '../i18n/labels'
 import { useLanguage } from '../i18n/LanguageContext'
 import type { Animal, AnimalDraft } from '../types'
+import { hasRareTrait } from '../utils/traits'
 import { AnimalForm } from './AnimalForm'
 import { TraitBadge } from './TraitBadge'
 import { fieldClass, panelClass } from './ui'
@@ -129,7 +130,11 @@ export function AnimalTable({ animals, onUpdate, onDelete }: AnimalTableProps) {
               ) : (
                 filtered.map((animal) => (
                   <tr key={animal.id} className="border-b border-wurm-border/70">
-                    <td className="whitespace-nowrap px-2 py-2 font-medium">{animal.name}</td>
+                    <td className="whitespace-nowrap px-2 py-2 font-medium">
+                      <span className={`inline-block ${hasRareTrait(animal.traits) ? 'border-l-4 border-l-[#4c8dff] pl-2' : ''}`}>
+                        {animal.name}
+                      </span>
+                    </td>
                     <td className="px-2 py-2">{optionLabel(ANIMAL_TYPES, animal.type)}</td>
                     <td className="px-2 py-2" title={genderLabel(animal.gender)}>
                       {animal.gender === 'female' ? 'F' : 'M'}

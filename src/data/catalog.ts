@@ -57,7 +57,7 @@ export const ANIMAL_GENDERS: CatalogOption[] = [
   { value: 'female', label: 'Female' },
 ]
 
-export const BREEDING_AGES = ['mature', 'aged', 'old', 'venerable']
+export const BREEDING_AGES = ['adolescent', 'mature', 'aged', 'old', 'venerable']
 
 export const ANIMAL_TRAITS: AnimalTrait[] = [
   { trait: 'Bred in captivity.', categories: ['Miscellaneous'] },

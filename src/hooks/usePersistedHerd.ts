@@ -7,6 +7,7 @@ import {
   savePersistedState,
 } from '../storage/persistedState'
 import { mergeExaminedAnimals } from '../logic/mergeExaminedAnimals'
+import { placeAnimal, removeAnimalFromPen, resizePen } from '../logic/penLayout'
 import type { ParsedExamine } from '../logic/parseExamineLog'
 import type { AnimalDraft } from '../types'
 
@@ -37,6 +38,7 @@ export function usePersistedHerd() {
     setState((prev) => ({
       ...prev,
       animals: prev.animals.filter((animal) => animal.id !== id),
+      pen: removeAnimalFromPen(prev.pen, id),
     }))
   }, [])
 
@@ -82,18 +84,55 @@ export function usePersistedHerd() {
     setState(defaultPersistedState())
   }, [])
 
-  const importExamined = useCallback((parsed: ParsedExamine[]) => {
-    let summary = { added: 0, updated: 0 }
+  const importExamined = useCallback((parsed: ParsedExamine[], tileIndex?: number | null) => {
+    let summary = { added: 0, updated: 0, skipped: 0 }
     setState((prev) => {
       const merged = mergeExaminedAnimals(prev.animals, parsed)
-      summary = { added: merged.added, updated: merged.updated }
-      return { ...prev, animals: merged.animals }
+      let pen = prev.pen
+      let placed = 0
+      if (typeof tileIndex === 'number') {
+        for (const id of merged.addedIds) {
+          const updatedPen = placeAnimal(pen, id, tileIndex)
+          if (updatedPen !== pen) {
+            pen = updatedPen
+            placed += 1
+          }
+        }
+      }
+      summary = {
+        added: merged.added,
+        updated: merged.updated,
+        skipped: typeof tileIndex === 'number' ? merged.addedIds.length - placed : 0,
+      }
+      return { ...prev, animals: merged.animals, pen }
     })
     return summary
   }, [])
 
+  const placeOnTile = useCallback((animalId: string, tileIndex: number) => {
+    setState((prev) => ({
+      ...prev,
+      pen: placeAnimal(prev.pen, animalId, tileIndex),
+    }))
+  }, [])
+
+  const removeFromTile = useCallback((animalId: string) => {
+    setState((prev) => ({
+      ...prev,
+      pen: removeAnimalFromPen(prev.pen, animalId),
+    }))
+  }, [])
+
+  const setPenSize = useCallback((columns: number, rows: number) => {
+    setState((prev) => ({
+      ...prev,
+      pen: resizePen(prev.pen, columns, rows),
+    }))
+  }, [])
+
   return {
     animals: state.animals,
+    pen: state.pen,
     addAnimal,
     updateAnimal,
     deleteAnimal,
@@ -101,5 +140,8 @@ export function usePersistedHerd() {
     clearPregnancy,
     resetHerd,
     importExamined,
+    placeOnTile,
+    removeFromTile,
+    setPenSize,
   }
 }

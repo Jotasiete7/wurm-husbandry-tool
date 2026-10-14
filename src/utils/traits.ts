@@ -51,3 +51,11 @@ export function formatTraits(traitNames: string[] | undefined): TraitSummary {
     names: traitNames,
   }
 }
+
+export function hasRareTrait(traitNames: string[] | undefined): boolean {
+  if (!traitNames || traitNames.length === 0) return false
+  return traitNames.some((name) => {
+    const trait = ANIMAL_TRAITS.find((item) => item.trait === name)
+    return trait?.categories.includes('Rare') ?? false
+  })
+}
