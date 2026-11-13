@@ -1,4 +1,3 @@
-import { BREEDING_AGES } from '../data/catalog'
 import type { Animal } from '../types'
 
 export const TILE_CAPACITY = 3
@@ -11,7 +10,7 @@ export type PenLayout = {
   tiles: string[][]
 }
 
-export type AnimalTone = 'male' | 'female' | 'pregnant' | 'birth'
+export type AnimalTone = 'male' | 'female' | 'pregnant'
 
 export function emptyPen(columns = 6, rows = 4): PenLayout {
   return {
@@ -62,24 +61,7 @@ export function removeAnimalFromPen(pen: PenLayout, animalId: string): PenLayout
   }
 }
 
-export function canGiveBirth(animal: Animal, mates: Animal[]): boolean {
-  if (animal.gender !== 'female' || animal.isPregnant) return false
-  if (!BREEDING_AGES.includes(animal.age)) return false
-  return mates.some(
-    (mate) =>
-      mate.id !== animal.id &&
-      mate.gender === 'male' &&
-      mate.type === animal.type &&
-      BREEDING_AGES.includes(mate.age),
-  )
-}
-
-export function animalTone(animal: Animal, mates: Animal[]): AnimalTone {
+export function animalTone(animal: Animal): AnimalTone {
   if (animal.gender === 'female' && animal.isPregnant) return 'pregnant'
-  if (canGiveBirth(animal, mates)) return 'birth'
   return animal.gender === 'male' ? 'male' : 'female'
-}
-
-export function tileHasPossibleBirth(animals: Animal[]): boolean {
-  return animals.some((animal) => canGiveBirth(animal, animals))
 }

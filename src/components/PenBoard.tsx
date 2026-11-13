@@ -8,7 +8,6 @@ import {
   MIN_SPAN,
   TILE_CAPACITY,
   animalTone,
-  tileHasPossibleBirth,
   type AnimalTone,
   type PenLayout,
 } from '../logic/penLayout'
@@ -29,8 +28,7 @@ type PenBoardProps = {
 const TONE_CLASS: Record<AnimalTone, string> = {
   male: 'bg-[#d4b483] text-black',
   female: 'bg-[#c4897b] text-black',
-  pregnant: 'bg-[#e0a35c] text-black',
-  birth: 'bg-[#6faf7a] text-black',
+  pregnant: 'bg-[#6faf7a] text-black',
 }
 
 function animalsOnTile(animals: Animal[], ids: string[]): Animal[] {
@@ -67,8 +65,7 @@ export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport }
   const toneLabel = (tone: AnimalTone) => {
     if (tone === 'male') return t('penLegendMale')
     if (tone === 'female') return t('penLegendFemale')
-    if (tone === 'pregnant') return t('penLegendPregnant')
-    return t('penLegendBirth')
+    return t('penLegendPregnant')
   }
 
   const dropOnTile = (tileIndex: number, animalId: string) => {
@@ -95,8 +92,7 @@ export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport }
           )}
           {visible.map((animal) => {
             const tileIndex = placed.get(animal.id)
-            const mates = tileIndex === undefined ? [animal] : animalsOnTile(animals, pen.tiles[tileIndex] ?? [])
-            const tone = animalTone(animal, mates)
+            const tone = animalTone(animal)
             const selected = selectedId === animal.id
             return (
               <li key={animal.id}>
@@ -164,7 +160,7 @@ export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport }
         </div>
 
         <ul className="mb-4 flex flex-wrap gap-3 text-xs text-wurm-muted">
-          {(['male', 'female', 'pregnant', 'birth'] as AnimalTone[]).map((tone) => (
+          {(['male', 'female', 'pregnant'] as AnimalTone[]).map((tone) => (
             <li key={tone} className="inline-flex items-center gap-1.5">
               <span className={`h-3 w-3 rounded-sm ${TONE_CLASS[tone]}`} />
               {toneLabel(tone)}
@@ -182,15 +178,14 @@ export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport }
         >
           {pen.tiles.map((ids, index) => {
             const occupants = animalsOnTile(animals, ids)
-            const birth = tileHasPossibleBirth(occupants)
             const full = occupants.length >= TILE_CAPACITY
             return (
               <div
                 key={index}
                 title={full ? t('penFull') : undefined}
-                className={`flex aspect-square flex-col gap-1 rounded-md border p-1.5 ${
-                  birth ? 'border-[#6faf7a]' : 'border-wurm-border'
-                } ${targetTile === index ? 'ring-2 ring-wurm-accent' : ''} ${
+                className={`flex aspect-square flex-col gap-1 rounded-md border border-wurm-border p-1.5 ${
+                  targetTile === index ? 'ring-2 ring-wurm-accent' : ''
+                } ${
                   dragOver === index ? 'bg-wurm-bg' : 'bg-wurm-bg/40'
                 }`}
                 onDragOver={(event) => {
@@ -214,7 +209,7 @@ export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport }
               >
                 <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
                   {occupants.map((animal) => {
-                    const tone = animalTone(animal, occupants)
+                    const tone = animalTone(animal)
                     const rare = hasRareTrait(animal.traits)
                     return (
                       <div
