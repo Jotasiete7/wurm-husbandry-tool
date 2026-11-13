@@ -3,6 +3,7 @@ import { ANIMAL_TYPES, BREEDING_AGES, optionLabel } from '../data/catalog'
 import { useLanguage } from '../i18n/LanguageContext'
 import type { Animal } from '../types'
 import { formatTraits } from '../utils/traits'
+import { BreedingLogImport } from './BreedingLogImport'
 import { fieldClass, labelClass, panelClass } from './ui'
 
 type BreedingPanelProps = {
@@ -135,12 +136,23 @@ export function BreedingPanel({ animals, onBreed }: BreedingPanelProps) {
         {message && (
           <p className={`text-sm ${isError ? 'text-red-400' : 'text-emerald-400'}`}>{message}</p>
         )}
-        <button
-          type="submit"
-          className="w-full rounded-md bg-wurm-accent px-3 py-2 text-sm font-medium text-black hover:bg-wurm-accent/90"
-        >
-          {t('breed')}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            className="min-w-0 flex-[4] rounded-md bg-wurm-accent px-3 py-2 text-sm font-medium text-black hover:bg-wurm-accent/90"
+          >
+            {t('breed')}
+          </button>
+          <BreedingLogImport
+            animals={animals}
+            onBreed={onBreed}
+            onSaved={() => {
+              setIsError(false)
+              setMessage(t('bred'))
+            }}
+            variant="icon"
+          />
+        </div>
       </form>
     </section>
   )

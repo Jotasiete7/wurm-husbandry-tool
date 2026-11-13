@@ -1,4 +1,4 @@
-import type { Animal, AnimalDraft, Gender } from '../types'
+import type { Animal, AnimalDraft, DeceasedAnimal, Gender, HistoryEntry, HistoryKind } from '../types'
 import { emptyPen, type PenLayout, TILE_CAPACITY, clampSpan } from '../logic/penLayout'
 
 export const STORAGE_KEY = 'wurm-husbandry-tool-state'
@@ -7,12 +7,16 @@ const CURRENT_VERSION = 1
 export type PersistedHerdState = {
   version: number
   animals: Animal[]
+  deceased: DeceasedAnimal[]
+  history: HistoryEntry[]
   pen: PenLayout
 }
 
 export const defaultPersistedState = (): PersistedHerdState => ({
   version: CURRENT_VERSION,
   animals: [],
+  deceased: [],
+  history: [],
   pen: emptyPen(),
 })
 
@@ -98,6 +102,32 @@ function sanitizeAnimal(value: unknown): Animal | null {
   }
 }
 
+function sanitizeDeceased(value: unknown): DeceasedAnimal | null {
+  const animal = sanitizeAnimal(value)
+  if (!animal) return null
+  const raw = value as Partial<DeceasedAnimal>
+  return {
+    ...animal,
+    diedAt: typeof raw.diedAt === 'number' ? raw.diedAt : animal.updatedAt,
+  }
+}
+
+function sanitizeHistory(value: unknown): HistoryEntry | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Partial<HistoryEntry>
+  const kinds: HistoryKind[] = ['died', 'bred', 'born', 'added']
+  if (typeof raw.id !== 'string' || typeof raw.name !== 'string' || typeof raw.at !== 'number') return null
+  if (typeof raw.kind !== 'string' || !kinds.includes(raw.kind as HistoryKind)) return null
+  return {
+    id: raw.id,
+    at: raw.at,
+    kind: raw.kind as HistoryKind,
+    name: raw.name,
+    ...(typeof raw.partner === 'string' && raw.partner ? { partner: raw.partner } : {}),
+    ...(raw.birth === 'delivered' || raw.birth === 'newborn' ? { birth: raw.birth } : {}),
+  }
+}
+
 function sanitizePen(value: unknown, animalIds: Set<string>): PenLayout {
   if (!value || typeof value !== 'object') return emptyPen()
   const raw = value as Partial<PenLayout>
@@ -125,13 +155,36 @@ export function loadPersistedState(): PersistedHerdState {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultPersistedState()
     const parsed = JSON.parse(raw) as Partial<PersistedHerdState>
+    const deceased = Array.isArray(parsed.deceased)
+      ? parsed.deceased
+          .map(sanitizeDeceased)
+          .filter((animal): animal is DeceasedAnimal => animal !== null)
+      : []
+    const deceasedIds = new Set(deceased.map((animal) => animal.id))
     const animals = Array.isArray(parsed.animals)
       ? parsed.animals
           .map(sanitizeAnimal)
-          .filter((animal): animal is Animal => animal !== null)
+          .filter((animal): animal is Animal => animal !== null && !deceasedIds.has(animal.id))
       : []
     const animalIds = new Set(animals.map((animal) => animal.id))
-    return { version: CURRENT_VERSION, animals, pen: sanitizePen(parsed.pen, animalIds) }
+    const seenHistory = new Set<string>()
+    const history = Array.isArray(parsed.history)
+      ? parsed.history
+          .map(sanitizeHistory)
+          .filter((entry): entry is HistoryEntry => {
+            if (!entry || seenHistory.has(entry.id)) return false
+            seenHistory.add(entry.id)
+            return true
+          })
+          .slice(0, 200)
+      : []
+    return {
+      version: CURRENT_VERSION,
+      animals,
+      deceased,
+      history,
+      pen: sanitizePen(parsed.pen, animalIds),
+    }
   } catch {
     return defaultPersistedState()
   }

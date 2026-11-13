@@ -9,6 +9,7 @@ import { AnimalTable } from './components/AnimalTable'
 import { BreedingPanel } from './components/BreedingPanel'
 import { HerdChart } from './components/HerdChart'
 import { PregnantTable } from './components/PregnantTable'
+import { HistoryLog } from './components/HistoryLog'
 import { PenBoard } from './components/PenBoard'
 import { usePersistedHerd } from './hooks/usePersistedHerd'
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext'
@@ -16,7 +17,7 @@ import type { AnimalDraft } from './types'
 
 function HusbandryTool() {
   const { language, setLanguage, t } = useLanguage()
-  const { animals, pen, addAnimal, updateAnimal, deleteAnimal, setBreeding, clearPregnancy, importExamined, placeOnTile, removeFromTile, setPenSize } =
+  const { animals, pen, history, addAnimal, updateAnimal, deleteAnimal, markDead, setBreeding, clearPregnancy, importExamined, placeOnTile, removeFromTile, setPenSize } =
     usePersistedHerd()
   const [notice, setNotice] = useState<string | null>(null)
   const [tab, setTab] = useState<'herd' | 'pen'>('herd')
@@ -42,6 +43,11 @@ function HusbandryTool() {
     if (!window.confirm(t('deleteConfirm'))) return
     deleteAnimal(id)
     flash(t('deleted'))
+  }
+
+  const handleMarkDead = (id: string) => {
+    markDead(id)
+    flash(t('markedDead'))
   }
 
   const handleImport = (parsed: Parameters<typeof importExamined>[0], tileIndex?: number | null) => {
@@ -108,6 +114,11 @@ function HusbandryTool() {
             onRemove={removeFromTile}
             onResize={setPenSize}
             onImport={handleImport}
+            onBreed={(femaleId, maleId, days, hours) => {
+              const error = handleBreed(femaleId, maleId, days, hours)
+              if (!error) flash(t('bred'))
+              return error
+            }}
           />
         ) : (
           <>
@@ -129,11 +140,20 @@ function HusbandryTool() {
         </div>
 
         <div className="mt-6">
-          <AnimalTable animals={animals} onUpdate={handleUpdate} onDelete={handleDelete} />
+          <AnimalTable
+            animals={animals}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+            onMarkDead={handleMarkDead}
+          />
         </div>
 
         <div className="mt-6">
           <PregnantTable animals={animals} onClear={clearPregnancy} />
+        </div>
+
+        <div className="mt-6">
+          <HistoryLog history={history} />
         </div>
           </>
         )}

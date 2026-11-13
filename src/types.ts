@@ -19,6 +19,21 @@ export type Animal = {
   updatedAt: number
 }
 
+export type DeceasedAnimal = Animal & {
+  diedAt: number
+}
+
+export type HistoryKind = 'died' | 'bred' | 'born' | 'added'
+
+export type HistoryEntry = {
+  id: string
+  at: number
+  kind: HistoryKind
+  name: string
+  partner?: string
+  birth?: 'delivered' | 'newborn'
+}
+
 export type AnimalDraft = {
   name: string
   type: string

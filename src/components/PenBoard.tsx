@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ExamineImport } from './ExamineImport'
 import { InspectImport } from './InspectImport'
+import { BreedingLogImport } from './BreedingLogImport'
 import { ANIMAL_TYPES, optionLabel } from '../data/catalog'
 import { useLanguage } from '../i18n/LanguageContext'
 import {
@@ -23,6 +24,7 @@ type PenBoardProps = {
   onRemove: (animalId: string) => void
   onResize: (columns: number, rows: number) => void
   onImport: (parsed: ParsedExamine[], tileIndex: number | null) => void
+  onBreed: (femaleId: string, maleId: string, days: number, hours: number) => string | null
 }
 
 const TONE_CLASS: Record<AnimalTone, string> = {
@@ -37,7 +39,7 @@ function animalsOnTile(animals: Animal[], ids: string[]): Animal[] {
     .filter((animal): animal is Animal => Boolean(animal))
 }
 
-export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport }: PenBoardProps) {
+export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport, onBreed }: PenBoardProps) {
   const { t } = useLanguage()
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -134,6 +136,7 @@ export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport }
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <ExamineImport onImport={(parsed) => onImport(parsed, targetTile)} />
           <InspectImport onImport={(parsed) => onImport(parsed, targetTile)} />
+          <BreedingLogImport animals={animals} onBreed={onBreed} />
           <p className="text-sm text-wurm-accentDim">
             {targetTile == null ? t('penPickTile') : t('penBirthTarget')}
           </p>

@@ -1,5 +1,5 @@
-import { ChevronDown, Pencil, Search, Trash2, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ChevronDown, Pencil, Search, Skull, Trash2, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { ANIMAL_CONDITIONS, ANIMAL_TYPES, optionLabel } from '../data/catalog'
 import { ageKey, genderKey } from '../i18n/labels'
 import { useLanguage } from '../i18n/LanguageContext'
@@ -13,37 +13,54 @@ type AnimalTableProps = {
   animals: Animal[]
   onUpdate: (id: string, draft: AnimalDraft) => void
   onDelete: (id: string) => void
+  onMarkDead: (id: string) => void
 }
 
-export function AnimalTable({ animals, onUpdate, onDelete }: AnimalTableProps) {
+export function AnimalTable({ animals, onUpdate, onDelete, onMarkDead }: AnimalTableProps) {
   const { t } = useLanguage()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [open, setOpen] = useState(true)
   const [editing, setEditing] = useState<Animal | null>(null)
+  const [dying, setDying] = useState<Animal | null>(null)
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return animals.filter((animal) => {
-      if (typeFilter !== 'all' && animal.type !== typeFilter) return false
-      if (!query) return true
-      return animal.name.toLowerCase().includes(query)
-    })
-  }, [animals, search, typeFilter])
+  useEffect(() => {
+    if (!dying) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDying(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [dying])
 
   const ageLabel = (age: string) => {
     const key = ageKey(age)
     return key ? t(key) : age
   }
 
-  const genderLabel = (gender: string) => {
-    const key = genderKey(gender)
-    return key ? t(key) : gender
-  }
-
   const conditionLabel = (condition: string) => {
     if (condition === 'none') return t('conditionNone')
     return optionLabel(ANIMAL_CONDITIONS, condition)
+  }
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    return animals.filter((animal) => {
+      if (typeFilter !== 'all' && animal.type !== typeFilter) return false
+      if (!query) return true
+      const haystack = [
+        animal.name,
+        optionLabel(ANIMAL_TYPES, animal.type),
+        ageLabel(animal.age),
+        conditionLabel(animal.condition),
+      ].join(' ').toLowerCase()
+      return haystack.includes(query)
+    })
+  }, [animals, search, typeFilter, t])
+
+  const genderLabel = (gender: string) => {
+    const key = genderKey(gender)
+    return key ? t(key) : gender
   }
 
   return (
@@ -67,7 +84,7 @@ export function AnimalTable({ animals, onUpdate, onDelete }: AnimalTableProps) {
           <div className="relative">
             <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-wurm-muted" />
             <input
-              className={`${fieldClass} !w-44 pl-8 pr-8 sm:!w-52`}
+              className={`${fieldClass} !w-56 pl-8 pr-8 sm:!w-64`}
               value={search}
               placeholder={t('searchPlaceholder')}
               onChange={(event) => setSearch(event.target.value)}
@@ -159,6 +176,14 @@ export function AnimalTable({ animals, onUpdate, onDelete }: AnimalTableProps) {
                         </button>
                         <button
                           type="button"
+                          className="rounded p-1.5 text-wurm-muted hover:bg-white/5 hover:text-wurm-text"
+                          title={t('markDead')}
+                          onClick={() => setDying(animal)}
+                        >
+                          <Skull size={14} />
+                        </button>
+                        <button
+                          type="button"
                           className="rounded p-1.5 text-wurm-muted hover:bg-white/5 hover:text-red-400"
                           title={t('delete')}
                           onClick={() => onDelete(animal.id)}
@@ -175,6 +200,54 @@ export function AnimalTable({ animals, onUpdate, onDelete }: AnimalTableProps) {
         </div>
       )}
       </>
+      )}
+
+      {dying && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setDying(null)}
+        >
+          <section
+            className={`${panelClass} w-full max-w-md`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mark-dead-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 id="mark-dead-title" className="font-serif text-xl text-wurm-text">{t('markDead')}</h2>
+              <button
+                type="button"
+                className="rounded p-1.5 text-wurm-muted hover:text-wurm-text"
+                aria-label={t('cancel')}
+                onClick={() => setDying(null)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="text-sm text-wurm-muted">{t('deadConfirm', { name: dying.name })}</p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-md border border-wurm-border px-3 py-2 text-sm text-wurm-text hover:border-wurm-accent"
+                autoFocus
+                onClick={() => setDying(null)}
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-wurm-accent px-3 py-2 text-sm font-medium text-black hover:bg-wurm-accent/90"
+                onClick={() => {
+                  onMarkDead(dying.id)
+                  setDying(null)
+                }}
+              >
+                {t('markDead')}
+              </button>
+            </div>
+          </section>
+        </div>
       )}
 
       {editing && (
