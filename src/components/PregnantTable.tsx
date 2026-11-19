@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ANIMAL_TYPES, optionLabel } from '../data/catalog'
 import { useLanguage } from '../i18n/LanguageContext'
+import { formatRemaining } from '../logic/formatRemaining'
 import type { Animal } from '../types'
 import { TraitBadge } from './TraitBadge'
 import { panelClass } from './ui'
@@ -8,17 +9,6 @@ import { panelClass } from './ui'
 type PregnantTableProps = {
   animals: Animal[]
   onClear: (id: string) => void
-}
-
-function formatRemaining(due: number, overdueLabel: string, now: number): string {
-  const diff = due - now
-  if (diff <= 0) return overdueLabel
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000))
-  const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000))
-  const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000))
-  if (days > 0) return `${days}d ${hours}h`
-  if (hours > 0) return `${hours}h ${minutes}m`
-  return `${minutes}m`
 }
 
 export function PregnantTable({ animals, onClear }: PregnantTableProps) {

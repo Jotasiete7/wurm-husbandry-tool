@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ExamineImport } from './ExamineImport'
 import { InspectImport } from './InspectImport'
 import { BreedingLogImport } from './BreedingLogImport'
@@ -12,6 +12,7 @@ import {
   type AnimalTone,
   type PenLayout,
 } from '../logic/penLayout'
+import { formatRemaining } from '../logic/formatRemaining'
 import type { ParsedExamine } from '../logic/parseExamineLog'
 import type { Animal } from '../types'
 import { hasRareTrait } from '../utils/traits'
@@ -39,13 +40,42 @@ function animalsOnTile(animals: Animal[], ids: string[]): Animal[] {
     .filter((animal): animal is Animal => Boolean(animal))
 }
 
+function foldSearch(value: string) {
+  return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+}
+
+function hiddenTags(
+  animal: Animal,
+  label: (key: 'penLegendMale' | 'penLegendFemale' | 'penLegendPregnant') => string,
+) {
+  const tags = new Set<string>()
+  if (animal.gender === 'female') {
+    tags.add('female')
+    tags.add(label('penLegendFemale'))
+    if (animal.isPregnant) {
+      tags.add('pregnant')
+      tags.add(label('penLegendPregnant'))
+    }
+  } else {
+    tags.add('male')
+    tags.add(label('penLegendMale'))
+  }
+  return [...tags]
+}
+
 export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport, onBreed }: PenBoardProps) {
   const { t } = useLanguage()
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [birthTile, setBirthTile] = useState<number | null>(null)
   const [dragOver, setDragOver] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   const targetTile = birthTile != null && birthTile < pen.tiles.length ? birthTile : null
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const placed = useMemo(() => {
     const map = new Map<string, number>()
@@ -56,13 +86,18 @@ export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport, 
   }, [pen.tiles])
 
   const visible = useMemo(() => {
-    const text = query.trim().toLowerCase()
+    const text = foldSearch(query.trim())
     return animals.filter((animal) => {
       if (!text) return true
-      const type = optionLabel(ANIMAL_TYPES, animal.type).toLowerCase()
-      return animal.name.toLowerCase().includes(text) || type.includes(text)
+      const type = foldSearch(optionLabel(ANIMAL_TYPES, animal.type))
+      const tags = hiddenTags(animal, t)
+      return (
+        foldSearch(animal.name).includes(text) ||
+        type.includes(text) ||
+        tags.some((tag) => foldSearch(tag).startsWith(text))
+      )
     })
-  }, [animals, query])
+  }, [animals, query, t])
 
   const toneLabel = (tone: AnimalTone) => {
     if (tone === 'male') return t('penLegendMale')
@@ -96,6 +131,7 @@ export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport, 
             const tileIndex = placed.get(animal.id)
             const tone = animalTone(animal)
             const selected = selectedId === animal.id
+            const tags = hiddenTags(animal, t)
             return (
               <li key={animal.id}>
                 <button
@@ -112,12 +148,20 @@ export function PenBoard({ animals, pen, onPlace, onRemove, onResize, onImport, 
                     setSelectedId(animal.id)
                   }}
                 >
+                  <span className="hidden">{tags.join(' ')}</span>
                   <span className={`h-3 w-3 shrink-0 rounded-sm ${TONE_CLASS[tone]}`} />
                   {hasRareTrait(animal.traits) && (
                     <span className="absolute bottom-1 left-0 top-1 w-1 rounded-sm bg-[#4c8dff]" title={t('penLegendRare')} />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-wurm-text">{animal.name}</span>
+                    <span className="flex items-baseline gap-2">
+                      <span className="min-w-0 flex-1 truncate text-wurm-text">{animal.name}</span>
+                      {animal.isPregnant && animal.breedingDueDate != null && (
+                        <span className="shrink-0 font-mono text-xs text-[#6faf7a]">
+                          {formatRemaining(animal.breedingDueDate, t('overdue'), now)}
+                        </span>
+                      )}
+                    </span>
                     <span className="block truncate text-xs text-wurm-muted">
                       {animal.gender === 'female' ? 'F' : 'M'}
                       {' · '}
